@@ -68,16 +68,23 @@ def run(args, config):
         all_outputs = list()
         line_time_start = time.time()
         for batch_id, batch in enumerate(get_batches(sentence, line_id, args.batch_size, args, config, word2idx)):
-            x_sentence, sentence_length, initial_state, summary_length, num_steps = batch
+            x_sentence, sentence_length, initial_state, summary_length, num_steps, after_sentence = batch
             logging.info('batch id: {}'.format(batch_id))
             print(x_sentence)
+            char_size_sentence = [len(s) + 1  for s in after_sentence ]
+            helper = [char_size_sentence]
+            char_size_sentence_batch = np.tile(np.asarray(char_size_sentence), (args.batch_size,1))
             feed_dict = {
                 model_inputs['sentence']: x_sentence,
                 model_inputs['sentence_length']: sentence_length,
                 model_inputs['initial_state']: initial_state.state,
                 model_inputs['initial_internal_state']: initial_state.internal_state,
                 model_inputs['summary_length']: summary_length,
-                model_inputs['num_steps']: num_steps
+                model_inputs['num_steps']: num_steps,
+                model_inputs['char_length'] : config["char_length"],
+                model_inputs['char_size_sen'] : char_size_sentence ,
+                model_inputs['char_size_sen_batch']:char_size_sentence_batch ,
+                model_inputs["helper"] :helper
                          }
 
             outputs = sess.run(model_outputs, feed_dict=feed_dict)
@@ -94,6 +101,7 @@ def run(args, config):
         logging.info('max_score: {}'.format(max_score))
         logging.info('max_state: {}'.format(max_state))
         logging.info('summary: {}'.format(summary))
+        logging.info('summary len: {}'.format(len(summary)))
         logging.info('run_time: {}'.format(int(time.time()-line_time_start)))
 
         outputs = dict(states=states,
@@ -194,12 +202,12 @@ def get_batches(sentence, line_id, batch_size, args, config, word2idx):
         for initial_state in get_extractive_initial_states(num_restarts,
                                                            batch_size,
                                                            x_sentence,
-                                                           summary_length,
+                                                           summary_length,sentence, config["char_length"],
                                                            exhaustive=exhaustive):
             if exhaustive:
                 num_steps = 0
 
-            yield x_sentence, sentence_length, initial_state, summary_length, num_steps
+            yield x_sentence, sentence_length, initial_state, summary_length, num_steps, sentence
 
 
 if __name__ == '__main__':

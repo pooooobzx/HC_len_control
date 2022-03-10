@@ -8,5 +8,5 @@ steps_factor: 0.1
 restarts_factor: 0.035
 metrics: ['lm', 'cos']
 weights: [1, 12]
-summary_length: 8
-char_length: 50
+summary_length: 13
+char_length: 80

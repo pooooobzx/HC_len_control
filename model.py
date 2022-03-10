@@ -17,6 +17,14 @@ def get_model(metrics, mode='extractive'):
 
     sentence = tf.placeholder(tf.int32, shape=[None], name="sentence")
     inputs['sentence'] = sentence
+    helper = tf.placeholder(tf.int32, shape=[None, None], name="helper")
+    inputs["helper"] = helper
+    char_length = tf.placeholder(tf.int32, shape=[], name= "char_length")
+    inputs['char_length'] = char_length
+    char_size_sen  = tf.placeholder(tf.int32, shape=[None], name= "char_size_sen")
+    inputs['char_size_sen'] = char_size_sen
+    char_size_sen_batch = tf.placeholder(tf.int32, shape=[None, None], name= "char_size_sen_batch")
+    inputs['char_size_sen_batch'] = char_size_sen_batch
 
     sentence_length = tf.placeholder(tf.int32, shape=[], name="sentence_length")
     inputs['sentence_length'] = sentence_length
@@ -63,8 +71,8 @@ def get_model(metrics, mode='extractive'):
         return _state, _score
 
     def run_sampler():
-        next_state = get_extractive_next_state_func(batch_size, sentence_length, summary_length, sentence)
-
+        #next_state = get_extractive_next_state_func(batch_size, sentence_length, summary_length, sentence)
+        next_state = get_extractive_next_state_func(batch_size, sentence_length, summary_length, sentence, char_length,char_size_sen,char_size_sen_batch, helper)
         hill_climber = get_hill_climber(get_score, num_steps)
         _states, _scores = hill_climber(initial_state_tuple, next_state)
         return _states, _scores

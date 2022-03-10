@@ -9,3 +9,4 @@ restarts_factor: 0.035
 metrics: ['lm', 'cos']
 weights: [1, 12]
 summary_length: 10
+char_length: 60
