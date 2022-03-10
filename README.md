@@ -24,7 +24,9 @@ Move *model.ckpt-311955.data-00000-of-00001* to *lm/outputs/title_backward/ckpt/
 Move *s2v_title.npy* to *data/sent2vec/*
 
 ### Run Inference
-Set correct paths in `configs/hc_title_8.yaml`
+Set correct paths in `configs/hc_title_8.yaml`  
+
+Change char_length parameters in yaml file to control the character length generated
 ```
 python run.py --input_file data/summary/sumdata/Giga/input.txt --config configs/hc_title_8.yaml --output_dir outputs/hc_title_8
 ```
@@ -39,10 +41,9 @@ python outputs/evaluate.py --output_dir outputs/hc_title_8/ --reference_file dat
 #### Results
 | Model                 | Rouge-F1-1 | Rouge-F1-2  | Rouge-F1-L |
 | --------------------- |:----------:|:-----------:|:----------:|
-| HC_title_8 paper      |    26.32   |    9.63     |    24.19   |
-| HC_title_8 repository |    26.27   |    9.80     |    24.20   |
-| HC_title_10 paper     |    27.52   |   10.27     |    24.91   |
-| HC_title_10 repository|    27.07   |   10.12     |    24.65   |
+| HC_title_8_50_char    |    25.08   |    8.89     |    23.07   |
+| HC_title_10_60_char   |    25.75   |    9.07     |    23.4    |
+| HC_title_13_80_char   |            |             |            |
 
 
 
