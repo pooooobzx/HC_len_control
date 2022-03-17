@@ -28,7 +28,7 @@ def main():
     parser.add_argument('--input_file', type=str, default='test/input.txt')
     parser.add_argument('--config', type=str, default='configs/default.yaml')
     parser.add_argument('--output_dir', type=str, default='outputs/default')
-    parser.add_argument('--batch_size', type=int, default=256)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--from_line', type=int, default=0)
     parser.add_argument('--to_line', type=int, default=-1)
     args = parser.parse_args()
@@ -60,15 +60,26 @@ def run(args, config):
 
     lines = get_lines(args)
     all_max_scores = list()
+    original_summary_len = config['summary_length']
     for line_id, sentence in lines.items():
+        config["summary_length"] = original_summary_len
+        
         logging.info('line id: {}'.format(line_id))
         line_output_dir = os.path.join(args.output_dir, 'lines', str(line_id))
         os.makedirs(line_output_dir, exist_ok=True)
 
-        all_outputs = list()
+        
         line_time_start = time.time()
+
+        max_so_far = -1
+        max_summary_so_far  = ""
+        max_state_so_far = []
+        max_state_total = []
+        max_score_total =[]
+        
         for batch_id, batch in enumerate(get_batches(sentence, line_id, args.batch_size, args, config, word2idx)):
             x_sentence, sentence_length, initial_state, summary_length, num_steps, after_sentence = batch
+            all_outputs = list()
             logging.info('batch id: {}'.format(batch_id))
             print(x_sentence)
             char_size_sentence = [len(s) + 1  for s in after_sentence ]
@@ -89,15 +100,29 @@ def run(args, config):
 
             outputs = sess.run(model_outputs, feed_dict=feed_dict)
             all_outputs.append(outputs)
+            
+            states = np.concatenate([o['states'] for o in all_outputs], axis=1)
+            scores = np.concatenate([o['scores'] for o in all_outputs], axis=1)
 
-        states = np.concatenate([o['states'] for o in all_outputs], axis=1)
-        scores = np.concatenate([o['scores'] for o in all_outputs], axis=1)
+            max_idx = np.unravel_index(np.argmax(scores), scores.shape)
+            max_score = scores[max_idx]
+            
+            max_state = states[max_idx]
+            summary = ' '.join([idx2word[idx] for idx in max_state])
+            if max_score >= max_so_far:
+                max_so_far = max_score
+                max_summary_so_far  = summary
+                max_state_so_far = max_state
+                max_state_total = states
+                max_score_total = scores
 
-        max_idx = np.unravel_index(np.argmax(scores), scores.shape)
-        max_score = scores[max_idx]
-        all_max_scores.append(max_score)
-        max_state = states[max_idx]
-        summary = ' '.join([idx2word[idx] for idx in max_state])
+        all_max_scores.append(max_so_far)
+        
+        max_score = max_so_far
+        summary = max_summary_so_far
+        max_state = max_state_so_far
+        states = max_state_total
+        scores = max_score_total
         logging.info('max_score: {}'.format(max_score))
         logging.info('max_state: {}'.format(max_state))
         logging.info('summary: {}'.format(summary))
@@ -199,15 +224,16 @@ def get_batches(sentence, line_id, batch_size, args, config, word2idx):
         exhaustive = num_evaluations >= num_exhaustive and config.get('allow_exhaustive', True)
         if exhaustive:
             logging.info('roughly number of exhaustive evaluations: {}'.format(num_exhaustive))
-        for initial_state in get_extractive_initial_states(num_restarts,
+        for initial_state in get_extractive_initial_states(192,
                                                            batch_size,
                                                            x_sentence,
                                                            summary_length,sentence, config["char_length"],
-                                                           exhaustive=exhaustive):
+                                                           config,exhaustive=exhaustive, ):
             if exhaustive:
                 num_steps = 0
+            summary_length = get_summary_length(config, orig_sentence_length)
 
-            yield x_sentence, sentence_length, initial_state, summary_length, num_steps, sentence
+            yield x_sentence, sentence_length, initial_state, summary_length , num_steps, sentence
 
 
 if __name__ == '__main__':

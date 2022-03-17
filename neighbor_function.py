@@ -58,7 +58,7 @@ def get_extractive_next_state_func(batch_size, sentence_length, summary_length, 
     return get_next_state
 
 
-def get_extractive_initial_states(num_restarts, batch_size, x_sentence, summary_length,sentence, char_length, exhaustive=False):
+def get_extractive_initial_states(num_restarts, batch_size, x_sentence, summary_length,sentence, char_length, config, exhaustive=False):
     summary_length = int(summary_length)
     char_length=int(char_length)
     sentence_length = x_sentence.size
@@ -86,7 +86,13 @@ def get_extractive_initial_states(num_restarts, batch_size, x_sentence, summary_
                 states = list()
     else:
         mylen = np.vectorize(len)
+        repeat  = 0 
+        potential = [summary_length -1 , summary_length, summary_length+1]
         for _ in range(num_restarts):
+            
+            summary_length=potential[repeat % 3 ]
+
+            config["summary_length"] = summary_length
             boolean_map = np.zeros(shape=sentence_length, dtype=np.bool)
             idx_positive = np.random.choice(range(sentence_length), size=summary_length, replace=False)
             boolean_map[idx_positive] = True
@@ -95,7 +101,7 @@ def get_extractive_initial_states(num_restarts, batch_size, x_sentence, summary_
             selected_char_len = int(np.sum(mylen(selected))) + len(selected) -1
             i = 0
             while selected_char_len > char_length : #give a time limit
-                logging.info("looking for proper length")
+                logging.info("looking for proper length {}".format(summary_length))
                 i += 1 
                 if i == 101:
                     logging.info("settle for a non-match len")
@@ -118,6 +124,7 @@ def get_extractive_initial_states(num_restarts, batch_size, x_sentence, summary_
 
             if len(states) == batch_size:
                 yield yield_batch(boolean_maps, states)
+                repeat += 1 
                 boolean_maps = list()
                 states = list()
     if len(states) > 0:
