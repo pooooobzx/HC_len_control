@@ -41,8 +41,8 @@ python outputs/evaluate.py --output_dir outputs/hc_title_8/ --reference_file dat
 #### Results
 | Model                 | Rouge-F1-1 | Rouge-F1-2  | Rouge-F1-L |
 | --------------------- |:----------:|:-----------:|:----------:|
-| HC_title_8_50_char    |    25.08   |    8.89     |    23.07   |
-| HC_title_10_60_char   |    25.75   |    9.07     |    23.4    |
+| HC_title_8_50_char    |    25.30   |    9.25     |    23.43   |
+| HC_title_10_60_char   |            |             |            |
 | HC_title_13_80_char   |            |             |            |
 
 
